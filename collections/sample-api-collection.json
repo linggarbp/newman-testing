@@ -1,0 +1,456 @@
+{
+  "info": {
+    "name": "JSONPlaceholder sample API (newman-testing)",
+    "description": "A runnable API contract suite against the public JSONPlaceholder API (https://jsonplaceholder.typicode.com). Folders are scenarios and requests are test cases: src/run.mjs executes one folder at a time and turns each request plus its pm.test assertions into a machine-readable report. Every folder is self-contained and order-independent.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Posts CRUD",
+      "description": "Create, read, update and delete against the posts resource. Self-contained: it names what it creates with a unique run suffix, so folders never collide and can run in any order.",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "// Every folder run is independent: mint a unique suffix so parallel runs cannot collide.",
+              "pm.environment.set('run_suffix', Date.now().toString());"
+            ]
+          }
+        }
+      ],
+      "item": [
+        {
+          "name": "GET /posts?_limit=5 returns five posts",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('responds as JSON', () => pm.response.to.have.header('Content-Type'));",
+                  "// Contract: assert the response SHAPE, not just the status code.",
+                  "pm.test('returns exactly five posts', () => {",
+                  "  const posts = pm.response.json();",
+                  "  pm.expect(posts).to.be.an('array');",
+                  "  pm.expect(posts).to.have.lengthOf(5);",
+                  "});",
+                  "pm.test('every post has the documented fields', () => {",
+                  "  for (const post of pm.response.json()) {",
+                  "    pm.expect(post.userId, 'userId').to.be.a('number');",
+                  "    pm.expect(post.id, 'id').to.be.a('number');",
+                  "    pm.expect(post.title, 'title').to.be.a('string').and.not.empty;",
+                  "    pm.expect(post.body, 'body').to.be.a('string').and.not.empty;",
+                  "  }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/posts?_limit=5",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "posts"
+              ],
+              "query": [
+                {
+                  "key": "_limit",
+                  "value": "5"
+                }
+              ]
+            },
+            "description": "Listing with a limit: the collection asks for five posts and must get exactly five."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /posts/1 returns a single post",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('it is post 1 with a title', () => {",
+                  "  const post = pm.response.json();",
+                  "  pm.expect(post.id, 'id').to.eql(1);",
+                  "  pm.expect(post.title, 'title').to.be.a('string').and.not.empty;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/posts/1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "posts",
+                "1"
+              ]
+            },
+            "description": "Read-after-write shape check on a known resource."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /posts creates a post",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('created', () => pm.response.to.have.status(201));",
+                  "// Contract: assert the response SHAPE, not just the status code.",
+                  "pm.test('echoes the submitted fields', () => {",
+                  "  const post = pm.response.json();",
+                  "  pm.expect(post.title).to.eql(`newman-testing-${pm.environment.get('run_suffix')}`);",
+                  "  pm.expect(post.body).to.eql('created by the sample suite');",
+                  "  pm.expect(post.userId).to.eql(1);",
+                  "});",
+                  "pm.test('assigns a numeric id', () => pm.expect(pm.response.json().id).to.be.a('number'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/posts",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "posts"
+              ]
+            },
+            "description": "Creates a post named after this run; the API echoes it back with an id.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"newman-testing-{{run_suffix}}\",\n  \"body\": \"created by the sample suite\",\n  \"userId\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PUT /posts/1 replaces the post",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('success', () => pm.response.to.have.status(200));",
+                  "pm.test('echoes the updated fields', () => {",
+                  "  const post = pm.response.json();",
+                  "  pm.expect(post.title).to.eql('newman-testing (updated)');",
+                  "  pm.expect(post.body).to.eql('updated by the sample suite');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/posts/1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "posts",
+                "1"
+              ]
+            },
+            "description": "Full replacement of an existing post; the API echoes the new representation.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": 1,\n  \"title\": \"newman-testing (updated)\",\n  \"body\": \"updated by the sample suite\",\n  \"userId\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /posts/1 removes the post",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('the API accepts the delete', () => pm.expect(pm.response.code).to.be.within(200, 299));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/posts/1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "posts",
+                "1"
+              ]
+            },
+            "description": "Any 2xx is a valid delete acknowledgement; the suite accepts the range rather than one exact code."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "description": "Read-side checks on the users resource, including a nested collection that must only contain the posts of the requested user.",
+      "item": [
+        {
+          "name": "GET /users lists users",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', () => pm.response.to.have.status(200));",
+                  "// Contract: assert the response SHAPE, not just the status code.",
+                  "pm.test('every user has the documented fields', () => {",
+                  "  const users = pm.response.json();",
+                  "  pm.expect(users).to.be.an('array').and.not.empty;",
+                  "  for (const user of users) {",
+                  "    pm.expect(user.id, 'id').to.be.a('number');",
+                  "    pm.expect(user.name, 'name').to.be.a('string').and.not.empty;",
+                  "    pm.expect(user.username, 'username').to.be.a('string').and.not.empty;",
+                  "    pm.expect(user.email, 'email').to.be.a('string').and.include('@');",
+                  "  }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/users",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "users"
+              ]
+            },
+            "description": "List endpoint: every element must carry the fields the contract documents."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /users/1 returns a single user",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('it is user 1 with an email address', () => {",
+                  "  const user = pm.response.json();",
+                  "  pm.expect(user.id, 'id').to.eql(1);",
+                  "  pm.expect(user.email, 'email').to.be.a('string').and.include('@');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/users/1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "users",
+                "1"
+              ]
+            },
+            "description": "Single-resource read with a shape check on the email field."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /users/1/posts lists only that user's posts",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('every post belongs to user 1', () => {",
+                  "  const posts = pm.response.json();",
+                  "  pm.expect(posts).to.be.an('array').and.not.empty;",
+                  "  for (const post of posts) pm.expect(post.userId, 'userId').to.eql(1);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/users/1/posts",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "users",
+                "1",
+                "posts"
+              ]
+            },
+            "description": "Nested resource: the filter must hold for every element, not just the first."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Comments",
+      "description": "Query-string filtering on the comments resource.",
+      "item": [
+        {
+          "name": "GET /comments?postId=1 lists the post's comments",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('only comments of post 1 are returned', () => {",
+                  "  const comments = pm.response.json();",
+                  "  pm.expect(comments).to.be.an('array').and.not.empty;",
+                  "  for (const comment of comments) pm.expect(comment.postId, 'postId').to.eql(1);",
+                  "});",
+                  "// Contract: assert the response SHAPE, not just the status code.",
+                  "pm.test('every comment has the documented fields', () => {",
+                  "  for (const comment of pm.response.json()) {",
+                  "    pm.expect(comment.id, 'id').to.be.a('number');",
+                  "    pm.expect(comment.name, 'name').to.be.a('string').and.not.empty;",
+                  "    pm.expect(comment.email, 'email').to.be.a('string').and.include('@');",
+                  "    pm.expect(comment.body, 'body').to.be.a('string').and.not.empty;",
+                  "  }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/comments?postId=1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "comments"
+              ],
+              "query": [
+                {
+                  "key": "postId",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Filtered collection: the predicate is asserted on every element."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Error handling",
+      "description": "Negative paths: the API must answer 404 for a resource that does not exist, instead of an empty 200.",
+      "item": [
+        {
+          "name": "GET /posts/9999999 answers 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('not found', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/posts/9999999",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "posts",
+                "9999999"
+              ]
+            },
+            "description": "A missing resource is an error, never a silent success."
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://jsonplaceholder.typicode.com"
+    }
+  ]
+}

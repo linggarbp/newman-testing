@@ -1,0 +1,21 @@
+{
+  "name": "newman-testing",
+  "version": "1.0.0",
+  "description": "A Postman collection plus a small programmatic Newman runner: folder-at-a-time execution, a machine-readable JSON report per folder, and honest exit codes.",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "newman run collections/sample-api-collection.json -e environments/local.json",
+    "test:run": "node src/run.mjs",
+    "list": "node src/run.mjs --list",
+    "lint": "node --check src/config.mjs && node --check src/report.mjs && node --check src/run.mjs",
+    "test:unit": "node --test test/unit/*.test.mjs"
+  },
+  "dependencies": {
+    "newman": "^6.2.2"
+  }
+}
